@@ -10,8 +10,8 @@ Absence-clock-in need python 3.6 or superior. For other hand it need two envirom
 They are:
 
 `ABSENCE_EMAIL={your email on absence}`
+
 `ABSENCE_PASS={your password on absence}`
-`USER_ID={User id of absence}`
 
 ### Clock in one day
 
@@ -40,6 +40,5 @@ clock_in.one_month()
 ## FUTURE (on develop)
 
 * Improve test
-* Get automatic your user id
 * Know your vacations
 * Cron for clock in every day
