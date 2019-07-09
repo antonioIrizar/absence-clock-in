@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 
 EMAIL = os.environ['ABSENCE_EMAIL']
 PASSWORD = os.environ['ABSENCE_PASS']
-USER_ID = os.environ['USER_ID']
 
 
 class Absence:
@@ -21,6 +20,7 @@ class Absence:
         self.email = EMAIL
         self.password = PASSWORD
         self.token = self.get_token()
+        self.user_id = self.get_user_id()
         self.year = year
         self.month = month
         self.day = day
@@ -43,9 +43,18 @@ class Absence:
 
         return token
 
+    def get_user_id(self) -> str:
+        req = urllib.request.Request(f'{self.BASE_URL}/auth/{self.token}',
+                                     headers={'content-type': 'application/json'})
+        with urllib.request.urlopen(req) as response:
+            response = json.loads(response.read())
+            user_id = response['_id']
+
+        return user_id
+
     def create_register(self, start: datetime, end: datetime):
         data = {
-            'userId': USER_ID,
+            'userId': self.user_id,
             '_id': 'new',
             'timezone': '+0000',
             'timezoneName': 'hora de verano de Europa central',
