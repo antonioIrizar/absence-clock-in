@@ -18,3 +18,18 @@ def login_response(token):
         }}
         """
     return login_response
+
+
+@pytest.fixture()
+def user_id():
+    return ''.join(random.choice(string.hexdigits) for _ in range(24))
+
+
+@pytest.fixture()
+def auth_user_id_response(user_id):
+    auth_user_id_response = f"""
+        {{
+            "_id": "{user_id}"
+        }}
+    """
+    return auth_user_id_response
