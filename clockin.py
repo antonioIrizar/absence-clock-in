@@ -34,7 +34,7 @@ class Absence:
         }
 
         body = json.dumps(data).encode('utf8')
-        req = urllib.request.Request(self.BASE_URL + '/auth/login',
+        req = urllib.request.Request(f'{self.BASE_URL}/auth/login',
                                      data=body,
                                      headers={'content-type': 'application/json'})
         with urllib.request.urlopen(req) as response:
@@ -65,7 +65,7 @@ class Absence:
             'trace': []
         }
         body = json.dumps(data).encode('utf8')
-        req = urllib.request.Request(self.BASE_URL + '/v2/timespans/create',
+        req = urllib.request.Request(f'{self.BASE_URL}/v2/timespans/create',
                                      data=body,
                                      headers={'content-type': 'application/json', 'x-vacationtoken': self.token})
 

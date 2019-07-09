@@ -16,7 +16,7 @@ class TestClockIn(object):
             return [200, response_headers, login_response]
 
         httpretty.enable()
-        httpretty.register_uri(httpretty.POST, Absence.BASE_URL + '/auth/login', body=request_callback)
+        httpretty.register_uri(httpretty.POST, f'{Absence.BASE_URL}/auth/login', body=request_callback)
 
     @pytest.fixture()
     def timespans_create(self, token):
@@ -31,7 +31,7 @@ class TestClockIn(object):
             return [200, response_headers, ""]
 
         httpretty.enable()
-        httpretty.register_uri(httpretty.POST, Absence.BASE_URL + '/v2/timespans/create', body=request_callback)
+        httpretty.register_uri(httpretty.POST, f'{Absence.BASE_URL}/v2/timespans/create', body=request_callback)
 
     @pytest.fixture()
     def auth_user_id(self, auth_user_id_response, token):
