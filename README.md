@@ -1,6 +1,6 @@
 # absence-clock-in
 
-Absence-clock-in is a tool to automate clock in hours of work on absence. This tool still on **beta**
+Absence-clock-in is a tool to automate clock in hours of work on absence.
 
 ## Usage
 
