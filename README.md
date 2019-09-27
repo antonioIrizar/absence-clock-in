@@ -40,5 +40,4 @@ clock_in.one_month()
 ## FUTURE (on develop)
 
 * Improve test
-* Know your vacations
 * Cron for clock in every day
