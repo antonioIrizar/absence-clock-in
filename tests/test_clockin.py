@@ -1,13 +1,14 @@
 from datetime import datetime, date
+from unittest import mock
 
 import pytest
 import httpretty
 from httpretty.core import HTTPrettyRequest
 
-from clockin import Absence
+from clockin import Absence, ClockIn
 
 
-class TestClockIn(object):
+class TestAbsence(object):
     @pytest.fixture()
     def login(self, login_response):
         def request_callback(request: HTTPrettyRequest, uri: str, response_headers: dict) -> list:
@@ -87,3 +88,65 @@ class TestClockIn(object):
 
         assert len(national_holidays) == 1, 'National holidays should only have one day'
         assert national_holidays[0] == date(2019, 8, 19)
+
+    def test_workday(self):
+        year = 2021
+        month = 2
+        day = 3
+        absence = Absence(year=year, month=month, day=day)
+
+        assert absence.workday == datetime(year=year, month=month, day=day).date()
+
+    @pytest.mark.parametrize('day,expected', [
+        (11, False),
+        (12, True)
+    ])
+    def test_is_friday(self, day, expected):
+        absence = Absence(year=2021, month=2, day=day)
+
+        assert absence.is_friday == expected
+
+    @pytest.mark.parametrize(
+        'month,expected',
+        [(month, month in (7, 8)) for month in range(1, 13)])
+    def test_is_summertime(self, month, expected):
+        absence = Absence(year=2021, month=month, day=1)
+
+        assert absence.is_summertime == expected
+
+    @pytest.mark.parametrize('register_date,expected', [
+        (datetime(year=2021, month=2, day=12).date(), True),  # Friday
+        (datetime(year=2021, month=8, day=1).date(), True),  # Summertime not friday
+        (datetime(year=2021, month=2, day=11).date(), False),  # Normal day
+    ])
+    def test_is_reduced_workday(self, register_date, expected):
+        absence = Absence(year=register_date.year, month=register_date.month, day=register_date.day)
+
+        assert absence.is_reduced_workday is expected
+
+
+class TestClockIn(object):
+
+    def test_create_friday_register(self):
+        clock_in = ClockIn(2021, 2)
+
+        with mock.patch('clockin.ClockIn._reduced_day') as mock_create_register:
+            clock_in.one_day(12)
+
+        mock_create_register.assert_called()
+
+    def test_create_weekday_no_friday_register(self):
+        clock_in = ClockIn(2021, 2)
+
+        with mock.patch('clockin.ClockIn._weekday_no_friday') as mock_create_register:
+            clock_in.one_day(11)
+
+        mock_create_register.assert_called()
+
+    def test_create_register_in_summertime(self):
+        clock_in = ClockIn(2021, 8)
+
+        with mock.patch('clockin.ClockIn._reduced_day') as mock_create_register:
+            clock_in.one_day(1)
+
+        mock_create_register.assert_called()

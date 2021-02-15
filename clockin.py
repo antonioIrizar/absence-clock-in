@@ -12,9 +12,10 @@ PASSWORD = os.environ['ABSENCE_PASS']
 
 class Absence:
     BASE_URL = 'https://app.absence.io/api'
-    WORKDAY: timedelta = timedelta(hours=8)
+    WORKDAY_WORKTIME: timedelta = timedelta(hours=8, minutes=15)
     TIME_TO_EAT = timedelta(hours=1)
     MAX_TIME: timedelta = timedelta(hours=6)
+    REDUCED_WORKTIME: timedelta = timedelta(hours=7)
 
     def __init__(self, year, month, day=None):
         self.email = EMAIL
@@ -75,6 +76,7 @@ class Absence:
     def create_register(self, start: datetime, end: datetime):
         if start.date() in self.holidays:
             return False
+
         data = {
             'userId': self.user_id,
             '_id': 'new',
@@ -105,7 +107,26 @@ class Absence:
         return True
 
     @property
+    def workday(self) -> date:
+        return datetime(year=self.year, month=self.month, day=self.day).date()
+
+    @property
+    def is_friday(self) -> bool:
+        return self.workday.weekday() == 4
+
+    @property
+    def is_summertime(self) -> bool:
+        return self.workday.month in (7, 8)
+
+    @property
+    def is_reduced_workday(self) -> bool:
+        return self.is_friday or self.is_summertime
+
+    @property
     def morning_hours(self) -> list:
+        if self.is_reduced_workday:
+            return [8]
+
         return [8, 9]
 
     @property
@@ -143,7 +164,7 @@ class Absence:
         return mealtime_start
 
     def get_departure_time(self, mealtime_end: datetime, time_work_on_morning: timedelta) -> datetime:
-        return mealtime_end + self.WORKDAY - time_work_on_morning
+        return mealtime_end + self.WORKDAY_WORKTIME - time_work_on_morning
 
     @staticmethod
     def string_to_date(date_on_string) -> date:
@@ -190,19 +211,29 @@ class ClockIn:
         self.month = month
         self.absence = Absence(year, month)
 
-    def one_day(self, day):
-        self.absence.day = day
+    def _weekday_no_friday(self):
         entry_time = self.absence.get_entry_time()
         mealtime_start = self.absence.get_mealtime_start(entry_time)
         mealtime_end = mealtime_start + self.absence.TIME_TO_EAT
         time_work_on_morning = mealtime_start - entry_time
         departure_time = self.absence.get_departure_time(mealtime_end, time_work_on_morning)
 
-        if entry_time.date() not in self.absence.holidays:
-            self.absence.create_register(entry_time, mealtime_start)
-            self.absence.create_register(mealtime_end, departure_time)
+        self.absence.create_register(entry_time, mealtime_start)
+        self.absence.create_register(mealtime_end, departure_time)
+
+    def _reduced_day(self):
+        entry_time = self.absence.get_entry_time()
+        departure_time = entry_time + self.absence.REDUCED_WORKTIME
+
+        self.absence.create_register(entry_time, departure_time)
+
+    def one_day(self, day: int):
+        self.absence.day = day
+
+        if self.absence.workday not in self.absence.holidays:
+            self._reduced_day() if self.absence.is_reduced_workday else self._weekday_no_friday()
         else:
-            print(f'You was on holiday at {entry_time.date()}')
+            print(f'You was on holiday at {self.absence.workday}')
 
     def one_month(self):
         for day in range(1, self.absence.max_day_of_month + 1):
