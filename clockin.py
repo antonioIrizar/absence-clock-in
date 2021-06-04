@@ -55,6 +55,30 @@ class Absence:
 
         return response
 
+    def _get_users_response(self) -> dict:
+        data = {
+            'relations': ['holidayIds']
+        }
+        body = json.dumps(data).encode('utf8')
+        req = urllib.request.Request(f'{self.BASE_URL}/v2/users',
+                                     data=body,
+                                     headers={'content-type': 'application/json', 'x-vacationtoken': self.token})
+        with urllib.request.urlopen(req) as response:
+            response = json.loads(response.read())
+
+        return response
+
+    @property
+    def user_data(self) -> dict:
+        return self._get_users_response()['data'][0]
+
+    @property
+    def national_holidays(self) -> list:
+        holidays = []
+        for holiday_row in self.user_data.get('holidays'):
+            holidays.extend(holiday_row['dates'])
+        return holidays
+
     @property
     def user_id(self):
         return self._auth_response['_id']
@@ -63,7 +87,7 @@ class Absence:
         first_day_of_month = date(self.year, self.month, 1)
         end_day_of_month = date(self.year, self.month, self.max_day_of_month)
         national_holidays = []
-        for holiday in self._auth_response['holidayDates']:
+        for holiday in self.national_holidays:
             holiday_date = self.string_to_date(holiday)
             if holiday_date < first_day_of_month:
                 continue
